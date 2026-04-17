@@ -134,14 +134,3 @@ Mở trình duyệt tại:
 - `DELETE /api/delete-certificate/<id>`: xóa một chứng chỉ.
 - `GET /api/analytics`: thống kê dữ liệu đã lưu.
 
-## Lưu ý khi push GitHub
-
-Không commit các file sinh ra local như:
-
-- `venv/`, `.venv/`
-- `.env`
-- `.cache/`, `backend/.cache/`
-- `*.db`, `*.sqlite`, `*.sqlite3`
-- `__pycache__/`, `*.pyc`
-
-Repo hiện chỉ nên chứa source code, file cấu hình mẫu và tài liệu hướng dẫn. Model OCR sẽ được tải lại tự động vào cache khi chạy ở môi trường mới.
