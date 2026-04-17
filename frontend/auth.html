@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Certificate Extractor – Auth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="icon-wrapper">
+        <div class="icon-circle">📷</div>
+      </div>
+
+      <h2 class="title">Certificate Extractor</h2>
+      <p class="subtitle">Trích xuất thông tin chứng chỉ tiếng Anh</p>
+
+      <div class="tab-switch">
+        <button id="login-tab" class="tab active">Đăng nhập</button>
+        <button id="register-tab" class="tab">Đăng ký</button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <form id="login-form" class="form-section">
+        <label>Tên đăng nhập</label>
+        <input type="text" id="login-username" placeholder="Nhập tên đăng nhập" />
+
+        <label>Mật khẩu</label>
+        <input type="password" id="login-password" placeholder="Nhập mật khẩu" />
+
+        <button class="submit-btn" type="button" id="login-btn">Đăng nhập</button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="register-form" class="form-section hidden">
+        <label>Họ và tên</label>
+        <input type="text" id="reg-fullname" placeholder="Nhập họ và tên" />
+
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="Nhập email" />
+
+        <label>Tên đăng nhập</label>
+        <input type="text" id="reg-username" placeholder="Tạo tên đăng nhập" />
+
+        <label>Mật khẩu</label>
+        <input type="password" id="reg-password" placeholder="Nhập mật khẩu" />
+
+        <label>Xác nhận mật khẩu</label>
+        <input type="password" id="reg-confirm" placeholder="Nhập lại mật khẩu" />
+
+        <button class="submit-btn" type="button" id="register-btn">Gửi mã xác thực</button>
+      </form>
+
+      <!-- OTP FORM -->
+      <form id="otp-form" class="form-section hidden">
+        <label>Mã xác thực gửi đến email</label>
+        <input type="text" id="otp-code" placeholder="Nhập mã 6 số" />
+
+        <button class="submit-btn" type="button" id="verify-btn">Xác nhận</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

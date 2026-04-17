@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Certificate Document AI</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-mark">AI</span>
+            <div>
+                <strong>Certificate AI</strong>
+                <small>Document extraction</small>
+            </div>
+        </div>
+        <nav class="nav">
+            <button class="nav-item active" data-section="workspace">Workspace</button>
+            <button class="nav-item" data-section="history">History</button>
+            <button class="nav-item" data-section="analytics">Analytics</button>
+            <button class="nav-item" id="logout-btn">Đăng xuất</button>
+        </nav>
+        <div class="user-box" id="user-box">Đang tải phiên...</div>
+    </aside>
+
+    <main class="main">
+        <section id="workspace-section" class="section active">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">Layout-aware OCR pipeline</p>
+                    <h1>Trích xuất chứng chỉ tiếng Anh</h1>
+                    <p class="subtitle">Upload chứng chỉ để OCR, phân loại, validate và review theo từng trường có bằng chứng.</p>
+                </div>
+                <div class="engine-select">
+                    <label for="engine">OCR engine</label>
+                    <select id="engine">
+                        <option value="doctr" selected>docTR</option>
+                        <option value="auto">Auto fallback</option>
+                        <option value="easyocr">EasyOCR</option>
+                    </select>
+                </div>
+            </header>
+
+            <section class="upload-band">
+                <label class="upload-action">
+                    <span>Chọn file</span>
+                    <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.pdf" multiple />
+                </label>
+                <label class="upload-action secondary">
+                    <span>Chọn folder</span>
+                    <input id="folder-input" type="file" accept=".jpg,.jpeg,.png,.pdf" webkitdirectory directory multiple />
+                </label>
+                <button id="process-all-btn" class="primary-command" type="button">Xử lý tất cả</button>
+                <div class="upload-note" id="upload-note">Chưa có file nào trong queue.</div>
+            </section>
+
+            <section class="workspace-grid">
+                <div class="queue-panel">
+                    <div class="panel-header">
+                        <h2>Processing queue</h2>
+                        <button id="clear-queue-btn" class="ghost-btn" type="button">Clear all</button>
+                    </div>
+                    <div id="queue-list" class="queue-list"></div>
+                </div>
+
+                <div class="document-panel">
+                    <div class="panel-header">
+                        <h2>Document evidence</h2>
+                        <span id="doc-meta" class="muted">Chưa chọn tài liệu</span>
+                    </div>
+                    <div class="image-stage" id="image-stage">
+                        <img id="preview-img" alt="Certificate preview" />
+                        <div id="bbox-layer" class="bbox-layer"></div>
+                        <div id="empty-preview" class="empty-preview">Upload chứng chỉ để xem vùng bằng chứng OCR.</div>
+                    </div>
+                </div>
+
+                <div class="review-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2>Field review</h2>
+                            <span id="result-summary" class="muted">Chưa có kết quả</span>
+                        </div>
+                        <button id="save-btn" class="primary-command" type="button" disabled>Xác nhận lưu</button>
+                    </div>
+                    <div class="quality-strip" id="quality-strip">
+                        <div><span>Loại</span><strong>-</strong></div>
+                        <div><span>Confidence</span><strong>-</strong></div>
+                        <div><span>Valid</span><strong>-</strong></div>
+                        <div><span>Review</span><strong>-</strong></div>
+                    </div>
+                    <div id="warnings" class="warnings hidden"></div>
+                    <div id="fields-container" class="fields-container"></div>
+                    <details class="ocr-details">
+                        <summary>OCR preview</summary>
+                        <pre id="ocr-preview"></pre>
+                    </details>
+                </div>
+            </section>
+        </section>
+
+        <section id="history-section" class="section">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">Human-in-the-loop archive</p>
+                    <h1>Lịch sử chứng chỉ</h1>
+                    <p class="subtitle">Các chứng chỉ đã review và lưu vào cơ sở dữ liệu.</p>
+                </div>
+                <button id="refresh-history-btn" class="primary-command" type="button">Refresh</button>
+            </header>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>File</th>
+                            <th>Loại</th>
+                            <th>Confidence</th>
+                            <th>Fields</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="analytics-section" class="section">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">Evaluation dashboard</p>
+                    <h1>Phân tích xử lý</h1>
+                    <p class="subtitle">Tổng quan dữ liệu đã lưu, số field hợp lệ và số field cần review.</p>
+                </div>
+                <button id="refresh-analytics-btn" class="primary-command" type="button">Refresh</button>
+            </header>
+            <div id="analytics-grid" class="analytics-grid"></div>
+        </section>
+    </main>
+
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-dialog">
+            <div class="panel-header">
+                <h2 id="modal-title">Chi tiết chứng chỉ</h2>
+                <button id="modal-close" class="ghost-btn" type="button">Đóng</button>
+            </div>
+            <div id="modal-content" class="modal-content"></div>
+            <div class="modal-actions">
+                <button id="modal-save" class="primary-command" type="button">Lưu thay đổi</button>
+                <button id="modal-delete" class="danger-btn" type="button">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

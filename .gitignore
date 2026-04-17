@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# Runtime data
+*.db
+*.sqlite
+*.sqlite3
+instance/
+uploads/
+
+# OCR/model caches
+.cache/
+backend/.cache/
+
+# Editor/OS files
+.DS_Store
+Thumbs.db
