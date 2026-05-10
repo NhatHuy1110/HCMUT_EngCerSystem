@@ -269,17 +269,6 @@ For any public reproduction, use anonymized or synthetic certificate images only
 - OTP handling is appropriate for a project prototype and should be hardened before production use.
 - Robustness tests under blur, rotation, compression, contrast shift, and noise are future work.
 
-## Citation
-
-```bibtex
-@software{nguyen2026hcmut_engcersystem,
-  title = {HCMUT EngCerSystem: An Interpretable Document AI System for English Certificate Digitization},
-  author = {Nguyen, Nhat Huy},
-  year = {2026},
-  institution = {Ho Chi Minh City University of Technology, VNU-HCM}
-}
-```
-
 ## Author
 
 Nguyen Nhat Huy  
