@@ -1,66 +1,66 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Certificate Extractor – Auth</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HCMUT EngCerSystem - Auth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
-  <div class="auth-container">
-    <div class="auth-card">
-      <div class="icon-wrapper">
-        <div class="icon-circle">📷</div>
+  <main class="auth-shell">
+    <section class="auth-card">
+      <div class="brand-block">
+        <div class="logo-frame">
+          <img src="assets/BK_logo.png" alt="HCMUT logo" />
+        </div>
+        <p class="eyebrow">Document AI system</p>
+        <h1>HCMUT EngCerSystem</h1>
+        <p class="subtitle">English certificate OCR, extraction, review, and archive management.</p>
       </div>
-
-      <h2 class="title">Certificate Extractor</h2>
-      <p class="subtitle">Trích xuất thông tin chứng chỉ tiếng Anh</p>
 
       <div class="tab-switch">
-        <button id="login-tab" class="tab active">Đăng nhập</button>
-        <button id="register-tab" class="tab">Đăng ký</button>
+        <button id="login-tab" class="tab active" type="button">Sign in</button>
+        <button id="register-tab" class="tab" type="button">Register</button>
       </div>
 
-      <!-- LOGIN FORM -->
       <form id="login-form" class="form-section">
-        <label>Tên đăng nhập</label>
-        <input type="text" id="login-username" placeholder="Nhập tên đăng nhập" />
+        <label for="login-username">Username</label>
+        <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username" />
 
-        <label>Mật khẩu</label>
-        <input type="password" id="login-password" placeholder="Nhập mật khẩu" />
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" />
 
-        <button class="submit-btn" type="button" id="login-btn">Đăng nhập</button>
+        <button class="submit-btn" type="button" id="login-btn">Sign in</button>
       </form>
 
-      <!-- REGISTER FORM -->
       <form id="register-form" class="form-section hidden">
-        <label>Họ và tên</label>
-        <input type="text" id="reg-fullname" placeholder="Nhập họ và tên" />
+        <label for="reg-fullname">Full name</label>
+        <input type="text" id="reg-fullname" placeholder="Enter your full name" autocomplete="name" />
 
-        <label>Email</label>
-        <input type="email" id="reg-email" placeholder="Nhập email" />
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" placeholder="Enter your email" autocomplete="email" />
 
-        <label>Tên đăng nhập</label>
-        <input type="text" id="reg-username" placeholder="Tạo tên đăng nhập" />
+        <label for="reg-username">Username</label>
+        <input type="text" id="reg-username" placeholder="Create a username" autocomplete="username" />
 
-        <label>Mật khẩu</label>
-        <input type="password" id="reg-password" placeholder="Nhập mật khẩu" />
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" placeholder="Create a password" autocomplete="new-password" />
 
-        <label>Xác nhận mật khẩu</label>
-        <input type="password" id="reg-confirm" placeholder="Nhập lại mật khẩu" />
+        <label for="reg-confirm">Confirm password</label>
+        <input type="password" id="reg-confirm" placeholder="Re-enter your password" autocomplete="new-password" />
 
-        <button class="submit-btn" type="button" id="register-btn">Gửi mã xác thực</button>
+        <button class="submit-btn" type="button" id="register-btn">Send verification code</button>
       </form>
 
-      <!-- OTP FORM -->
       <form id="otp-form" class="form-section hidden">
-        <label>Mã xác thực gửi đến email</label>
-        <input type="text" id="otp-code" placeholder="Nhập mã 6 số" />
+        <label for="otp-code">Verification code</label>
+        <input type="text" id="otp-code" placeholder="Enter the 6-digit code" inputmode="numeric" />
 
-        <button class="submit-btn" type="button" id="verify-btn">Xác nhận</button>
+        <button class="submit-btn" type="button" id="verify-btn">Verify account</button>
       </form>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script src="auth.js"></script>
 </body>

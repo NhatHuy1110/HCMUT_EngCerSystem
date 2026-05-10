@@ -3,6 +3,9 @@ __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Virtual environments
 venv/
@@ -19,10 +22,34 @@ venv/
 *.sqlite3
 instance/
 uploads/
+backend/uploads/
+server_start.log
+server_start.err.log
+*.log
 
 # OCR/model caches
 .cache/
 backend/.cache/
+**/.cache/
+
+# Private datasets and real certificate samples inside this repository
+data/
+dataset/
+datasets/
+raw_data/
+samples/
+private_samples/
+*.pdf
+*.docx
+!README.md
+
+# Benchmark files may contain real document paths, predictions, annotations,
+# extracted text, and field-level personal information.
+benchmark/
+
+# Evaluation outputs
+eval_outputs/
+.ipynb_checkpoints/
 
 # Editor/OS files
 .DS_Store

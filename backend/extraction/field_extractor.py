@@ -112,6 +112,27 @@ def _clean_toeic_name(value: str) -> str:
     return " ".join(parts)
 
 
+def _clean_toefl_name(value: str) -> str:
+    value = re.sub(r"^\s*Name\s*:+\s*", " ", value or "", flags=re.I)
+    value = re.sub(r"\([^)]*\)", " ", value)
+    value = re.sub(r"[,;:|/\\-]+", " ", value)
+    value = re.sub(
+        r"\b(THIS\w*|BAPO\w*|APDF|PDF|DOWNLOADED\w*|DOWNLDADED\w*|PRINTED\w*|PINTED\w*|MINTED|BYTHE\w*|AYTHE\w*|"
+        r"TEST|TAKER|TARER|TAKEKS|INTENDED\w*|PERSONAL\w*|RECORDS?|SCORE|REPORT|POF|BTT|THE|AND|FOR|FROM|"
+        r"LAST|FAMILY|FAMIY|FAMLY|SUMAME|SUMANE|SURNAME|FIRST|FNT|FRST|GIVEN|GHEN|GHRE|MIDDLE|MIDDIE|MODE|"
+        r"NAME|NEME|NAR|LOUFAMLYSIUMAME|LAUTE|SY|BY|RE|NI|LNDU|DOR|IEST|IESI|IHE|PEISONAL|TESTTAKERSI|TESYTAKERSI|"
+        r"RICORDS|TESTTAKER|THSSAPDE|IHSSAPOFE|TAKEE|SPERSONAL|LASTLFAMIY|FAMILYLERNAMEY|FAMAYSUMANE|FAMDYSUNAME|"
+        r"LALVENY|GHENT|PIST|FRT|FRAT|GIVENI|MIDDE|C'?AMIYSAMAME)\b",
+        " ",
+        value,
+        flags=re.I,
+    )
+    value = re.sub(r"[^A-Za-zÀ-ỹ .'-]", " ", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    parts = [part for part in value.split() if len(part) > 1]
+    return " ".join(parts).upper()
+
+
 def _normalize_ielts_score(value: str) -> str:
     raw = (value or "").upper().replace("O", "0").replace(",", ".")
     raw = re.sub(r"[^0-9.]", "", raw)
@@ -436,7 +457,12 @@ def _set_field(fields_by_key: dict[str, dict[str, Any]], key: str, value: str, l
             return
         value = normalized_score
     elif key == "candidate.full_name":
-        value = _clean_toeic_name(value) if source.startswith("toeic") else _clean_name(value)
+        if source.startswith("toeic"):
+            value = _clean_toeic_name(value)
+        elif source.startswith("toefl"):
+            value = _clean_toefl_name(value)
+        else:
+            value = _clean_name(value)
     elif key == "candidate.test_date" and source.startswith("ielts"):
         value = _normalize_ielts_date(value)
         if not _valid_ielts_date(value):
@@ -820,8 +846,8 @@ def _apply_toefl_layout_overrides(fields: list[dict[str, Any]], lines: list[Text
     fields_by_key = {field["key"]: field for field in fields}
     for idx, line in enumerate(lines):
         text = line.text
-        if text.startswith("Name:"):
-            match = re.search(r"Name:\s*([^,]+)", text, flags=re.I)
+        if re.search(r"^\s*Name\s*:+", text, flags=re.I):
+            match = re.search(r"Name\s*:+\s*(.+)$", text, flags=re.I)
             if match:
                 _set_field(fields_by_key, "candidate.full_name", match.group(1), line, "toefl_layout")
 
@@ -842,6 +868,9 @@ def _apply_toefl_layout_overrides(fields: list[dict[str, Any]], lines: list[Text
             if total_inline:
                 total_value = total_inline.group(1) or total_inline.group(3) or total_inline.group(2)
                 _set_field(fields_by_key, "score.total", total_value, line, "toefl_layout")
+            total_out_of = re.search(r"\b(\d{2,3})\s*/\s*120\b|\b(\d{2,3})\s+120\b", text, flags=re.I)
+            if total_out_of:
+                _set_field(fields_by_key, "score.total", total_out_of.group(1) or total_out_of.group(2), line, "toefl_layout")
             reading = re.search(r"Reading:?\s*(\d{1,2})(?!\s*-)", text, flags=re.I)
             if reading:
                 _set_field(fields_by_key, "score.reading", reading.group(1), line, "toefl_layout")
@@ -869,15 +898,21 @@ def _apply_toefl_layout_overrides(fields: list[dict[str, Any]], lines: list[Text
         total = sum(section_values)
         if total <= 120:
             anchor = next((line for line in lines if "Total Score" in line.text), lines[-1] if lines else TextLine("", [0, 0, 0, 0], 0.75, []))
-            fields_by_key["score.total"].update(
-                {
-                    "value": str(total),
-                    "confidence": max(float(fields_by_key["score.total"].get("confidence") or 0.0), 0.9),
-                    "bbox": anchor.bbox,
-                    "evidence": "TOEFL section score sum",
-                    "source": "toefl_score_sum",
-                }
-            )
+            current_total = fields_by_key["score.total"].get("value")
+            try:
+                current_total_i = int(str(current_total))
+            except Exception:
+                current_total_i = 0
+            if not current_total_i or current_total_i == total:
+                fields_by_key["score.total"].update(
+                    {
+                        "value": str(total),
+                        "confidence": max(float(fields_by_key["score.total"].get("confidence") or 0.0), 0.9),
+                        "bbox": anchor.bbox,
+                        "evidence": "TOEFL section score sum",
+                        "source": "toefl_score_sum",
+                    }
+                )
 
 
 def _apply_cambridge_layout_overrides(fields: list[dict[str, Any]], lines: list[TextLine]) -> None:

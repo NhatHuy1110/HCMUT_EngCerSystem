@@ -5,24 +5,33 @@ const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 const otpForm = document.getElementById("otp-form");
 
-// ---- Tab switching ----
-loginTab.onclick = () => {
+function showLogin() {
   loginTab.classList.add("active");
   registerTab.classList.remove("active");
   loginForm.classList.remove("hidden");
   registerForm.classList.add("hidden");
   otpForm.classList.add("hidden");
-};
+}
 
-registerTab.onclick = () => {
+function showRegister() {
   registerTab.classList.add("active");
   loginTab.classList.remove("active");
   registerForm.classList.remove("hidden");
   loginForm.classList.add("hidden");
   otpForm.classList.add("hidden");
-};
+}
 
-// ---- Register Step 1: send OTP ----
+async function readJsonResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+  return data;
+}
+
+loginTab.onclick = showLogin;
+registerTab.onclick = showRegister;
+
 document.getElementById("register-btn").onclick = async () => {
   const payload = {
     fullname: document.getElementById("reg-fullname").value.trim(),
@@ -32,66 +41,54 @@ document.getElementById("register-btn").onclick = async () => {
     confirm: document.getElementById("reg-confirm").value,
   };
 
-  const res = await fetch("/api/register-step1", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    alert(data.error || "Đăng ký thất bại");
-    return;
+  try {
+    const response = await fetch("/api/register-step1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await readJsonResponse(response);
+    const devOtpText = data.devOtp ? `\n\nDev-mode OTP: ${data.devOtp}` : "";
+    alert(`A verification code has been sent to your email.${devOtpText}`);
+    registerForm.classList.add("hidden");
+    otpForm.classList.remove("hidden");
+  } catch (error) {
+    alert(error.message || "Registration failed");
   }
-
-  const devOtpText = data.devOtp ? `\n\nMã OTP dev-mode: ${data.devOtp}` : "";
-  alert(`Mã xác thực đã được gửi đến email. Vui lòng kiểm tra và nhập mã.${devOtpText}`);
-  registerForm.classList.add("hidden");
-  otpForm.classList.remove("hidden");
 };
 
-// ---- Register Step 2: verify OTP ----
 document.getElementById("verify-btn").onclick = async () => {
   const code = document.getElementById("otp-code").value.trim();
 
-  const res = await fetch("/api/register-verify", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  const data = await res.json();
-
-  if (!res.ok) {
-    alert(data.error || "Xác thực thất bại");
-    return;
+  try {
+    const response = await fetch("/api/register-verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    await readJsonResponse(response);
+    alert("Registration completed. Please sign in.");
+    showLogin();
+  } catch (error) {
+    alert(error.message || "Verification failed");
   }
-
-  alert("Đăng ký thành công! Vui lòng đăng nhập.");
-  otpForm.classList.add("hidden");
-  loginForm.classList.remove("hidden");
-  loginTab.classList.add("active");
-  registerTab.classList.remove("active");
 };
 
-// ---- Login ----
 document.getElementById("login-btn").onclick = async () => {
   const payload = {
     username: document.getElementById("login-username").value.trim(),
     password: document.getElementById("login-password").value,
   };
 
-  const res = await fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    alert(data.error || "Đăng nhập thất bại");
-    return;
+  try {
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    await readJsonResponse(response);
+    window.location.href = "/app";
+  } catch (error) {
+    alert(error.message || "Sign in failed");
   }
-
-  // Đăng nhập xong chuyển sang web chính
-  window.location.href = "/app";
 };

@@ -6,7 +6,7 @@ from .base import BaseOCREngine, EmptyOCREngine
 
 def get_ocr_engine(preferred: str | None = None) -> BaseOCREngine:
     requested = (preferred or os.getenv("OCR_ENGINE") or "doctr").strip().lower()
-    order = ["doctr", "easyocr"] if requested == "auto" else [requested, "doctr", "easyocr"]
+    order = ["doctr", "paddleocr", "easyocr"] if requested == "auto" else [requested, "doctr", "paddleocr", "easyocr"]
 
     errors: list[str] = []
     for name in dict.fromkeys(order):
@@ -25,6 +25,13 @@ def get_ocr_engine(preferred: str | None = None) -> BaseOCREngine:
                 from .easyocr_engine import EasyOCREngine
 
                 return EasyOCREngine()
+            if name in {"paddleocr", "paddle"}:
+                if find_spec("paddleocr") is None:
+                    errors.append("paddleocr: paddleocr is not installed in this environment")
+                    continue
+                from .paddle_engine import PaddleOCREngine
+
+                return PaddleOCREngine()
         except Exception as exc:
             errors.append(f"{name}: {exc}")
 

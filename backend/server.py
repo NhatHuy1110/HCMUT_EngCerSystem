@@ -1,6 +1,8 @@
 import os
 import json
 import random
+import csv
+import io
 from datetime import datetime, timedelta
 from functools import wraps
 
@@ -10,6 +12,7 @@ from flask import (
     jsonify,
     session,
     send_from_directory,
+    Response,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -155,6 +158,104 @@ def login_required(fn):
 
     return wrapper
 
+
+def _certificate_rows_for_user():
+    return (
+        Certificate.query.filter_by(user_id=current_user_id())
+        .order_by(Certificate.created_at.desc())
+        .all()
+    )
+
+
+def _field_status_counts(payload: dict) -> dict:
+    counts = {"valid": 0, "review": 0, "missing": 0}
+    for field in payload.get("fields", []) or []:
+        status = str(field.get("status") or "missing").lower()
+        if status not in counts:
+            status = "review"
+        counts[status] += 1
+    return counts
+
+
+def _history_analysis(rows: list[Certificate]) -> dict:
+    by_type: dict[str, int] = {}
+    by_engine: dict[str, int] = {}
+    field_issues: dict[str, dict[str, int]] = {}
+    total_confidence = 0.0
+    total_valid = 0
+    total_review = 0
+    total_missing = 0
+    total_fields = 0
+    recent = []
+
+    for row in rows:
+        payload = row._payload()
+        cert_type = row.cert_type or payload.get("certType") or "Unknown"
+        by_type[cert_type] = by_type.get(cert_type, 0) + 1
+        total_confidence += float(row.confidence or 0.0)
+
+        ocr_engine = payload.get("ocr", {}).get("engine") or "unknown"
+        by_engine[ocr_engine] = by_engine.get(ocr_engine, 0) + 1
+
+        quality = payload.get("quality", {}) or {}
+        fields = payload.get("fields", []) or []
+        counts = _field_status_counts(payload)
+        valid = int(quality.get("valid_fields", counts["valid"]) or 0)
+        review = int(quality.get("review_fields", counts["review"]) or 0)
+        total = int(quality.get("total_fields", len(fields)) or 0)
+        missing = max(0, total - valid - review)
+
+        total_valid += valid
+        total_review += review
+        total_missing += missing
+        total_fields += total
+
+        for field in fields:
+            status = str(field.get("status") or "").lower()
+            if status not in {"review", "missing"}:
+                continue
+            key = field.get("key") or field.get("label") or "unknown"
+            if key not in field_issues:
+                field_issues[key] = {"review": 0, "missing": 0, "total": 0}
+            field_issues[key][status] += 1
+            field_issues[key]["total"] += 1
+
+        recent.append(
+            {
+                "id": row.id,
+                "file_name": row.file_name,
+                "cert_type": cert_type,
+                "confidence": round(float(row.confidence or 0.0), 4),
+                "created_at": row.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "valid_fields": valid,
+                "review_fields": review,
+                "missing_fields": missing,
+                "total_fields": total,
+                "completion_rate": round(valid / total, 4) if total else 0,
+            }
+        )
+
+    top_issues = [
+        {"field": key, **value}
+        for key, value in sorted(field_issues.items(), key=lambda item: item[1]["total"], reverse=True)[:8]
+    ]
+
+    return {
+        "totalCertificates": len(rows),
+        "averageConfidence": round(total_confidence / len(rows), 4) if rows else 0,
+        "byType": by_type,
+        "byEngine": by_engine,
+        "validFields": total_valid,
+        "reviewFields": total_review,
+        "missingFields": total_missing,
+        "totalFields": total_fields,
+        "fieldValidityRate": round(total_valid / total_fields, 4) if total_fields else 0,
+        "reviewRate": round(total_review / total_fields, 4) if total_fields else 0,
+        "missingRate": round(total_missing / total_fields, 4) if total_fields else 0,
+        "topFieldIssues": top_issues,
+        "recent": recent,
+    }
+
 # -------------------- AUTH API --------------------
 
 
@@ -281,9 +382,10 @@ def process_certificate():
 
     file = request.files["file"]
     preferred_engine = request.form.get("engine") or request.args.get("engine")
+    preprocessing_mode = request.form.get("preprocessing") or request.args.get("preprocessing") or "full"
 
     try:
-        result = process_document(file.read(), file.filename, preferred_engine)
+        result = process_document(file.read(), file.filename, preferred_engine, preprocessing_mode)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -326,11 +428,7 @@ def my_certificates():
     Trả về list certificates đã lưu (brief) cho bảng history.
     """
     uid = current_user_id()
-    rows = (
-        Certificate.query.filter_by(user_id=uid)
-        .order_by(Certificate.created_at.desc())
-        .all()
-    )
+    rows = _certificate_rows_for_user()
     return jsonify([r.to_brief_dict() for r in rows])
 
 
@@ -389,28 +487,90 @@ def delete_certificate(cert_id):
 @app.route("/api/analytics", methods=["GET"])
 @login_required
 def analytics():
-    rows = Certificate.query.filter_by(user_id=current_user_id()).all()
-    by_type = {}
-    total_review = 0
-    total_valid = 0
-    total_fields = 0
+    return jsonify(_history_analysis(_certificate_rows_for_user()))
+
+
+@app.route("/api/history-analysis", methods=["GET"])
+@login_required
+def history_analysis():
+    return jsonify(_history_analysis(_certificate_rows_for_user()))
+
+
+@app.route("/api/export-certificates.csv", methods=["GET"])
+@login_required
+def export_certificates_csv():
+    rows = _certificate_rows_for_user()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "id",
+            "created_at",
+            "file_name",
+            "cert_type",
+            "confidence",
+            "requested_engine",
+            "ocr_engine",
+            "processing_ms",
+            "total_fields",
+            "valid_fields",
+            "review_fields",
+            "missing_fields",
+            "field_key",
+            "field_label",
+            "field_value",
+            "field_status",
+            "field_confidence",
+            "field_source",
+            "field_warnings",
+        ]
+    )
 
     for row in rows:
-        by_type[row.cert_type] = by_type.get(row.cert_type, 0) + 1
-        quality = row._payload().get("quality", {})
-        total_review += int(quality.get("review_fields", 0) or 0)
-        total_valid += int(quality.get("valid_fields", 0) or 0)
-        total_fields += int(quality.get("total_fields", 0) or 0)
+        payload = row._payload()
+        quality = payload.get("quality", {}) or {}
+        fields = payload.get("fields", []) or []
+        counts = _field_status_counts(payload)
+        total = int(quality.get("total_fields", len(fields)) or 0)
+        valid = int(quality.get("valid_fields", counts["valid"]) or 0)
+        review = int(quality.get("review_fields", counts["review"]) or 0)
+        missing = max(0, total - valid - review)
+        common = [
+            row.id,
+            row.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            row.file_name,
+            row.cert_type,
+            round(float(row.confidence or 0.0), 4),
+            payload.get("requestedEngine", ""),
+            payload.get("ocr", {}).get("engine", ""),
+            payload.get("processingMs", ""),
+            total,
+            valid,
+            review,
+            missing,
+        ]
+        if not fields:
+            writer.writerow(common + ["", "", "", "", "", "", ""])
+            continue
+        for field in fields:
+            writer.writerow(
+                common
+                + [
+                    field.get("key", ""),
+                    field.get("label", ""),
+                    field.get("value", ""),
+                    field.get("status", ""),
+                    field.get("confidence", ""),
+                    field.get("source", ""),
+                    " | ".join(str(item) for item in field.get("warnings", []) or []),
+                ]
+            )
 
-    return jsonify(
-        {
-            "totalCertificates": len(rows),
-            "byType": by_type,
-            "reviewFields": total_review,
-            "validFields": total_valid,
-            "totalFields": total_fields,
-            "fieldValidityRate": round(total_valid / total_fields, 4) if total_fields else 0,
-        }
+    filename = f"certificates_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 # -------------------- FRONTEND ROUTES --------------------

@@ -1,27 +1,31 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Certificate Document AI</title>
+    <title>HCMUT EngCerSystem</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
     <aside class="sidebar">
         <div class="brand">
-            <span class="brand-mark">AI</span>
+            <span class="brand-mark">
+                <img src="assets/BK_logo.png" alt="HCMUT logo" />
+            </span>
             <div>
-                <strong>Certificate AI</strong>
-                <small>Document extraction</small>
+                <strong>HCMUT EngCerSystem</strong>
+                <small>English certificate OCR</small>
             </div>
         </div>
         <nav class="nav">
             <button class="nav-item active" data-section="workspace">Workspace</button>
             <button class="nav-item" data-section="history">History</button>
             <button class="nav-item" data-section="analytics">Analytics</button>
-            <button class="nav-item" id="logout-btn">Đăng xuất</button>
         </nav>
-        <div class="user-box" id="user-box">Đang tải phiên...</div>
+        <div class="sidebar-bottom">
+            <div class="user-box" id="user-box">Loading session...</div>
+            <button class="logout-button" id="logout-btn" type="button">Log out</button>
+        </div>
     </aside>
 
     <main class="main">
@@ -29,30 +33,33 @@
             <header class="page-header">
                 <div>
                     <p class="eyebrow">Layout-aware OCR pipeline</p>
-                    <h1>Trích xuất chứng chỉ tiếng Anh</h1>
-                    <p class="subtitle">Upload chứng chỉ để OCR, phân loại, validate và review theo từng trường có bằng chứng.</p>
+                    <h1>HCMUT EngCerSystem</h1>
+                    <p class="subtitle">Upload certificates, run OCR, classify the document type, validate extracted fields, and review everything before saving.</p>
                 </div>
-                <div class="engine-select">
-                    <label for="engine">OCR engine</label>
-                    <select id="engine">
-                        <option value="doctr" selected>docTR</option>
-                        <option value="auto">Auto fallback</option>
-                        <option value="easyocr">EasyOCR</option>
-                    </select>
+                <div class="header-controls">
+                    <div class="engine-select">
+                        <label for="engine">OCR engine</label>
+                        <select id="engine">
+                            <option value="doctr" selected>docTR</option>
+                            <option value="paddleocr">PaddleOCR</option>
+                            <option value="easyocr">EasyOCR</option>
+                            <option value="auto">Auto fallback</option>
+                        </select>
+                    </div>
                 </div>
             </header>
 
             <section class="upload-band">
                 <label class="upload-action">
-                    <span>Chọn file</span>
+                    <span>Select files</span>
                     <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.pdf" multiple />
                 </label>
                 <label class="upload-action secondary">
-                    <span>Chọn folder</span>
+                    <span>Select folder</span>
                     <input id="folder-input" type="file" accept=".jpg,.jpeg,.png,.pdf" webkitdirectory directory multiple />
                 </label>
-                <button id="process-all-btn" class="primary-command" type="button">Xử lý tất cả</button>
-                <div class="upload-note" id="upload-note">Chưa có file nào trong queue.</div>
+                <button id="process-all-btn" class="primary-command" type="button">Process all</button>
+                <div class="upload-note" id="upload-note">No files in queue.</div>
             </section>
 
             <section class="workspace-grid">
@@ -66,13 +73,18 @@
 
                 <div class="document-panel">
                     <div class="panel-header">
-                        <h2>Document evidence</h2>
-                        <span id="doc-meta" class="muted">Chưa chọn tài liệu</span>
+                        <h2>Document preview</h2>
+                        <div class="preview-tools">
+                            <button id="zoom-out-btn" class="icon-btn" type="button" title="Zoom out" aria-label="Zoom out">-</button>
+                            <span id="zoom-label" class="zoom-label">100%</span>
+                            <button id="zoom-in-btn" class="icon-btn" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+                            <span id="doc-meta" class="muted">No document selected</span>
+                        </div>
                     </div>
                     <div class="image-stage" id="image-stage">
                         <img id="preview-img" alt="Certificate preview" />
                         <div id="bbox-layer" class="bbox-layer"></div>
-                        <div id="empty-preview" class="empty-preview">Upload chứng chỉ để xem vùng bằng chứng OCR.</div>
+                        <div id="empty-preview" class="empty-preview">Upload a certificate to preview the document.</div>
                     </div>
                 </div>
 
@@ -80,12 +92,12 @@
                     <div class="panel-header">
                         <div>
                             <h2>Field review</h2>
-                            <span id="result-summary" class="muted">Chưa có kết quả</span>
+                            <span id="result-summary" class="muted">No result yet</span>
                         </div>
-                        <button id="save-btn" class="primary-command" type="button" disabled>Xác nhận lưu</button>
+                        <button id="save-btn" class="primary-command" type="button" disabled>Confirm save</button>
                     </div>
                     <div class="quality-strip" id="quality-strip">
-                        <div><span>Loại</span><strong>-</strong></div>
+                        <div><span>Type</span><strong>-</strong></div>
                         <div><span>Confidence</span><strong>-</strong></div>
                         <div><span>Valid</span><strong>-</strong></div>
                         <div><span>Review</span><strong>-</strong></div>
@@ -104,21 +116,27 @@
             <header class="page-header">
                 <div>
                     <p class="eyebrow">Human-in-the-loop archive</p>
-                    <h1>Lịch sử chứng chỉ</h1>
-                    <p class="subtitle">Các chứng chỉ đã review và lưu vào cơ sở dữ liệu.</p>
+                    <h1>Saved certificates</h1>
+                    <p class="subtitle">Review saved records, inspect extraction quality, and export confirmed fields for downstream use.</p>
                 </div>
-                <button id="refresh-history-btn" class="primary-command" type="button">Refresh</button>
+                <div class="header-actions">
+                    <button id="export-history-btn" class="ghost-btn" type="button">Export CSV</button>
+                    <button id="refresh-history-btn" class="primary-command" type="button">Refresh</button>
+                </div>
             </header>
+
+            <div id="history-analysis" class="history-analysis"></div>
+
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Thời gian</th>
+                            <th>Saved at</th>
                             <th>File</th>
-                            <th>Loại</th>
+                            <th>Type</th>
                             <th>Confidence</th>
                             <th>Fields</th>
-                            <th></th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="history-body"></tbody>
@@ -129,26 +147,27 @@
         <section id="analytics-section" class="section">
             <header class="page-header">
                 <div>
-                    <p class="eyebrow">Evaluation dashboard</p>
-                    <h1>Phân tích xử lý</h1>
-                    <p class="subtitle">Tổng quan dữ liệu đã lưu, số field hợp lệ và số field cần review.</p>
+                    <p class="eyebrow">Operational analytics</p>
+                    <h1>Processing analysis</h1>
+                    <p class="subtitle">Aggregate quality, review burden, OCR engine usage, and certificate distribution across saved records.</p>
                 </div>
                 <button id="refresh-analytics-btn" class="primary-command" type="button">Refresh</button>
             </header>
             <div id="analytics-grid" class="analytics-grid"></div>
+            <div id="analytics-details" class="analysis-details"></div>
         </section>
     </main>
 
     <div id="detail-modal" class="modal hidden">
         <div class="modal-dialog">
             <div class="panel-header">
-                <h2 id="modal-title">Chi tiết chứng chỉ</h2>
-                <button id="modal-close" class="ghost-btn" type="button">Đóng</button>
+                <h2 id="modal-title">Certificate detail</h2>
+                <button id="modal-close" class="ghost-btn" type="button">Close</button>
             </div>
             <div id="modal-content" class="modal-content"></div>
             <div class="modal-actions">
-                <button id="modal-save" class="primary-command" type="button">Lưu thay đổi</button>
-                <button id="modal-delete" class="danger-btn" type="button">Xóa</button>
+                <button id="modal-save" class="primary-command" type="button">Save changes</button>
+                <button id="modal-delete" class="danger-btn" type="button">Delete</button>
             </div>
         </div>
     </div>
